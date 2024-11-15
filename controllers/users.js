@@ -6,7 +6,7 @@ import Token from "../models/Token.js";
 import crypto from "crypto";
 import { sendEmail } from "../SendEmail.js";
 import mongoose from "mongoose";
-import { deleteFileFromCloudinary, uploadImageToCloudinary } from "../helpers/functions.js";
+import {  uploadImageToCloudinary } from "../helpers/functions.js";
 import Wallet from "../models/Wallet.js";
 
 export const signin = async (req, res) => {
@@ -67,71 +67,35 @@ export const signin = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
-export const uploadProfileImage = async (req, res) => {
 
-
-  try {
-    const { type, image } = req.body;
-    const { id } = req.params;
-    const OldUser = await User.findOne({ _id: id });
-    let oldFile, imageToSet, tempImage;
-    if (type === "cover") {
-      oldFile = OldUser.coverImage;
-    } else {
-      oldFile = OldUser.profileImage;
-    }
-    if (oldFile) {
-      const isDeleted = await deleteFileFromCloudinary(oldFile)
-      if (isDeleted) {
-        const fileFromCloudinary = await uploadImageToCloudinary(req.file, res)
-        tempImage = fileFromCloudinary?.url;
-      } else {
-        res.status(500).json({ message: "Something went wrong while deleting previous image" });
-      }
-    } else {
-      const fileFromCloudinary = await uploadImageToCloudinary(req.file, res)
-      tempImage = fileFromCloudinary?.url;
-    }
-
-    if (type === "cover") {
-      imageToSet = { coverImage: tempImage };
-    } else {
-      imageToSet = { profileImage: tempImage };
-    }
-    const newUser = await User.findByIdAndUpdate(
-      { _id: id },
-      { $set: imageToSet },
-      { new: true }
-    );
-
-    res.status(200).json(newUser);
-  } catch (error) {
-    return res.status(500).json({ message: 'Internal server error' });
-  }
-};
 
 export const signup = async (req, res) => {
 
   try {
     const data = { ...req.body };
-    let fullName = `${data.firstName} ${data.lastName}`;
-    delete data.firstName;
-    delete data.lastName;
+    const { panImage, aadharImage, clientImage } = req.files;
     const oldUser = await User.findOne({ email: data.email });
-
     if (oldUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 12);
-
+console.log(panImage,aadharImage,clientImage)
+    const fileFromCloudinary = await Promise.all([uploadImageToCloudinary(panImage[0], res), uploadImageToCloudinary(aadharImage[0], res), uploadImageToCloudinary(clientImage[0], res)])
+    console.log(fileFromCloudinary,'fileFromCloudinary')
+    let fullName = `${data.firstName} ${data.lastName}`;
+    delete data.firstName;
+    delete data.lastName;
     const result = await User.create({
       ...data,
       password: hashedPassword,
       fullName: fullName,
+      panImage: fileFromCloudinary[0],
+      aadharImage: fileFromCloudinary[1],
+      clientImage: fileFromCloudinary[2],
     });
     const wallet = await Wallet.create({
-      user:result?._id,
+      user: result?._id,
     });
 
     await User.findByIdAndUpdate(result?._id, {
@@ -147,38 +111,16 @@ export const signup = async (req, res) => {
     );
     res.status(201).json({ result, token });
   } catch (error) {
-    console.log(error,'error');
+    console.log(error, 'error');
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
 
-export const googleSignIn = async (req, res) => {
 
-
-  try {
-    const { email, name, token, googleId } = req.body;
-    const oldUser = await User.findOne({ email });
-    if (oldUser) {
-      const result = { _id: oldUser._id.toString(), email, name };
-      return res.status(200).json({ result, token });
-    }
-
-    const result = await User.create({
-      email,
-      fullName: name,
-      googleId,
-    });
-
-    res.status(200).json({ result, token });
-  } catch (error) {
-    return res.status(500).json({ message: 'Internal server error' });
-  }
-};
 export const getUser = async (req, res) => {
   try {
     const user = req.user;
-    const userData = await returnUserData(user);
-
+    const userData = await returnUserData(user?.id);
     res.status(200).json(userData[0] || {}); // Send the first (and likely only) result back
   } catch (error) {
     console.log(error);
@@ -186,29 +128,21 @@ export const getUser = async (req, res) => {
 
   }
 };
-export const returnUserData= async(user)=>{
+export const getUserById = async (req, res) => {
+  try {
+    const userId = req.query?.userId;
+    const userData = await returnUserData(userId);
+    res.status(200).json(userData[0] || {}); // Send the first (and likely only) result back
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: 'Internal server error' });
+
+  }
+};
+export const returnUserData = async (userId) => {
   return await User.aggregate([
     {
-      $match: { _id: mongoose.Types.ObjectId(user.id) },
-    },
-    {
-      $lookup: {
-        from: "orderitems", // Name of the collection you're joining (OrderItem collection)
-        let: { userId: "$_id" },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ["$user", "$$userId"] },
-                  { $eq: ["$isPlaced", false] } // Only include items where isPlaced is false
-                ],
-              },
-            },
-          },
-        ],
-        as: "carts",
-      },
+      $match: { _id: mongoose.Types.ObjectId(userId) },
     },
     {
       $lookup: {
@@ -222,51 +156,6 @@ export const returnUserData= async(user)=>{
       $unwind: "$wallet" // Unwind the array to have a single team object
     },
     {
-      $lookup: {
-        from: "wishlistitems", // Name of the collection you're joining
-        localField: "_id",
-        foreignField: "user",
-        as: "whislistItems",
-      },
-    },
-    {
-      $lookup: {
-        from: "vouchers", // Name of the Voucher collection
-        localField: "_id",
-        foreignField: "user",
-        as: "vouchers",
-      },
-    },
-    {
-      $addFields: {
-        vouchers: {
-          $map: {
-            input: "$vouchers", // Loop through each voucher in the array
-            as: "voucher",
-            in: {
-              $mergeObjects: [
-                "$$voucher", // Keep all existing fields of the voucher
-                {
-                  usedVoucher: {
-                    $cond: {
-                      if: {
-                        $and: [
-                          { $isArray: "$$voucher.usersUsed" }, // Check if usersUsed is an array
-                          { $gt: [{ $size: "$$voucher.usersUsed" }, 0] }, // Ensure usersUsed array is not empty
-                        ],
-                      },
-                      then: { $in: [mongoose.Types.ObjectId(user.id), "$$voucher.usersUsed"] }, // Check if userId is in usersUsed array
-                      else: false, // If usersUsed is not an array or empty, usedVoucher is false
-                    },
-                  },
-                },
-              ],
-            },
-          },
-        },
-      },
-    },
-    {
       $project: {
         password: 0,
       },
@@ -275,126 +164,24 @@ export const returnUserData= async(user)=>{
 }
 export const getUsers = async (req, res) => {
   try {
-    const userId=req?.user?.id
+    const userId = req?.user?.id
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    const totalUsers = await User.countDocuments();
+    const searchQuery = req.query.search || ""; // Search query from request
+    const totalUsers = await User.countDocuments({
+      role: "User",
+      fullName: { $regex: searchQuery, $options: "i" }, // Search for fullName case-insensitively
+    });
     const allUsers = await User.aggregate([
       // Match users with role "User"
       {
         $match: {
           role: "User",
+          fullName: { $regex: searchQuery, $options: "i" },
         },
       },
-      // Lookup carts from OrderItem collection
-      {
-        $lookup: {
-          from: "orderitems", // Name of the OrderItem collection
-          let: { userId: "$_id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ["$user", "$$userId"] },  // Match user's order items
-                    { $eq: ["$isPlaced", false] }   // Filter for isPlaced: false
-                  ]
-                }
-              }
-            }
-          ],
-          as: "carts",
-        },
-      },
-      // Lookup wishlist items from WishListItem collection
-      {
-        $lookup: {
-          from: "wishlistitems", // Name of the WishListItem collection
-          localField: "_id",
-          foreignField: "user",
-          as: "wishlistItems",
-        },
-      },
-      {
-        $lookup: {
-          from: "vouchers", // Name of the Voucher collection
-          localField: "_id",
-          foreignField: "user",
-          as: "vouchers",
-        },
-      },
-      {
-        $lookup: {
-          from: "messages", // Name of the Message collection
-          let: { userId: "$_id" }, // Variable to use in pipeline
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ["$sender", "$$userId"] },
-                    { $eq: ["$recipient", mongoose.Types.ObjectId(userId) ] }, // Match recipient to the user
-                    { $eq: ["$read", false] }, // Only include unread messages
-                  ],
-                },
-              },
-            },
-            {
-              $sort: { createdAt: -1 }, // Sort the results by createdAt (most recent messages first)
-            },
-          ],
-          as: "unreadMessages",
-        },
-      },
-      {
-        $lookup: {
-          from: "messages",
-          let: { userId: "$_id" }, // Variable to use in pipeline (current user ID)
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    {
-                      $or: [
-                        {
-                          $and: [
-                            { $eq: ["$sender", mongoose.Types.ObjectId(userId)] }, // sender is userId
-                            { $eq: ["$recipient", "$$userId"] } // recipient is current userId
-                          ]
-                        },
-                        {
-                          $and: [
-                            { $eq: ["$sender", "$$userId"] }, // sender is current userId
-                            { $eq: ["$recipient", mongoose.Types.ObjectId(userId)] } // recipient is userId
-                          ]
-                        }
-                      ]
-                    },
-                    // { $eq: ["$read", true] } // Only include read messages
-                  ]
-                }
-              }
-            },
-            {
-              $sort: { createdAt: -1 } // Sort by createdAt (most recent first)
-            },
-            {
-              $limit: 1 // Limit to 1 (get the latest read message)
-            }
-          ],
-          as: "latestReadMessage"
-        }
-      },
-      {
-        $addFields: {
-          unreadMessageCount: { $size: "$unreadMessages" }, // Add a field to store the number of unread messages
-        },
-      },
-      {
-        $sort: { unreadMessageCount: -1 }, // Sort by the number of unread messages (descending order)
-      },
+    
       {
         $skip: skip, // Skip the necessary number of documents for pagination
       },
@@ -415,7 +202,7 @@ export const getUsers = async (req, res) => {
 };
 export const getAllAdmin = async (req, res) => {
   try {
-   const userId=req?.user?.id
+    const userId = req?.user?.id
     const allAdmin = await User.aggregate([
       {
         $match: {
@@ -493,7 +280,7 @@ export const getAllAdmin = async (req, res) => {
       {
         $sort: { unreadMessageCount: -1 }, // Sort by the number of unread messages (descending order)
       },
-     
+
 
     ]);
     res.status(200).json(allAdmin);

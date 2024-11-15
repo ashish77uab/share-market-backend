@@ -9,7 +9,7 @@ export const uploadImageToCloudinary = async (file, res) => {
             ]
         });
         fs.unlinkSync("./public/uploads/" + file?.filename);
-        return result
+        return result?.url
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Something went wrong during image upload.' });
