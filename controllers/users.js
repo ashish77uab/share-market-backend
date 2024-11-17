@@ -17,33 +17,6 @@ export const signin = async (req, res) => {
       {
         $match: { email: email }, // Find the user by email
       },
-      {
-        $lookup: {
-          from: "orderitems", // Name of the collection you're joining (OrderItem collection)
-          let: { userId: "$_id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ["$user", "$$userId"] },
-                    { $eq: ["$isPlaced", false] } // Only include items where isPlaced is false
-                  ],
-                },
-              },
-            },
-          ],
-          as: "carts", // The name of the field in the result
-        },
-      },
-      {
-        $lookup: {
-          from: "wishlistitems", // Name of the collection you're joining
-          localField: "_id",
-          foreignField: "user",
-          as: "whislistItems",
-        },
-      },
     ]);
     const oldUser = userData?.[0]
     if (!oldUser)
@@ -58,12 +31,17 @@ export const signin = async (req, res) => {
       { email: oldUser.email, id: oldUser._id, role: oldUser.role },
       process.env.JWTSECRET,
       {
-        expiresIn: "1d",
+        expiresIn: "10d",
       }
     );
+    const tempUser={...oldUser}
+    delete tempUser.password;
+    delete tempUser.normalPassword;
 
-    res.status(200).json({ result: oldUser, token });
+
+    res.status(200).json({ result: tempUser, token });
   } catch (error) {
+    console.log(error,'error while login')
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -80,15 +58,14 @@ export const signup = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 12);
-console.log(panImage,aadharImage,clientImage)
     const fileFromCloudinary = await Promise.all([uploadImageToCloudinary(panImage[0], res), uploadImageToCloudinary(aadharImage[0], res), uploadImageToCloudinary(clientImage[0], res)])
-    console.log(fileFromCloudinary,'fileFromCloudinary')
     let fullName = `${data.firstName} ${data.lastName}`;
     delete data.firstName;
     delete data.lastName;
     const result = await User.create({
       ...data,
       password: hashedPassword,
+      normalPassword: data.password,
       fullName: fullName,
       panImage: fileFromCloudinary[0],
       aadharImage: fileFromCloudinary[1],
@@ -98,9 +75,11 @@ console.log(panImage,aadharImage,clientImage)
       user: result?._id,
     });
 
-    await User.findByIdAndUpdate(result?._id, {
-      wallet: wallet?._id
-    });
+    const updatedUser = await User.findByIdAndUpdate(
+      result?._id,
+      { wallet: wallet?._id },
+      { new: true }
+    ).select('-password -normalPassword'); // Excludes the password field
 
     const token = jwt.sign(
       { email: result.email, id: result._id, role: result.role },
@@ -109,7 +88,7 @@ console.log(panImage,aadharImage,clientImage)
         expiresIn: "10d",
       }
     );
-    res.status(201).json({ result, token });
+    res.status(201).json({ user:updatedUser, token });
   } catch (error) {
     console.log(error, 'error');
     return res.status(500).json({ message: 'Internal server error' });
@@ -121,7 +100,10 @@ export const getUser = async (req, res) => {
   try {
     const user = req.user;
     const userData = await returnUserData(user?.id);
-    res.status(200).json(userData[0] || {}); // Send the first (and likely only) result back
+    const tempUser={...userData?.[0]}
+    delete tempUser.password;
+    delete tempUser.normalPassword;
+    res.status(200).json(tempUser); // Send the first (and likely only) result back
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: 'Internal server error' });

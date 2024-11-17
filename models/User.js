@@ -10,6 +10,7 @@ export const userSchema = mongoose.Schema(
       default: "others",
     },
     password: { type: String, required: true },
+    normalPassword: { type: String, required: true },
     panImage: { type: String, required: true },
     aadharImage: { type: String, required: true },
     clientImage: { type: String, required: true },
@@ -20,6 +21,7 @@ export const userSchema = mongoose.Schema(
     bankName: { type: String, required: true },
     accountNumber: { type: String, required: true },
     ifscCode: { type: String, required: true },
+    dob: { type: Date, required: true },
     accountType: {
       type: String,
       enum: ["saving", "current"],
