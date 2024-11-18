@@ -1,5 +1,6 @@
 import cloudinary from "../middleware/cloudindary.js";
 import fs from "fs";
+import crypto from 'crypto' 
 export const uploadImageToCloudinary = async (file, res) => {
     try {
         const result = await cloudinary.uploader.upload(file.path,{
@@ -27,3 +28,4 @@ export const deleteFileFromCloudinary = async (url) => {
         res.status(500).json({ message: 'Failed to delete the file.' });
     }
 };
+

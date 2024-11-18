@@ -3,7 +3,7 @@ import bodyParser from "body-parser";
 import mongoose from "mongoose";
 import cors from "cors";
 import userRoutes from "./routes/users.js";
-import tournamentRoutes from "./routes/tournament.js";
+import transactionRoutes from "./routes/transactions.js";
 import matchRoutes from "./routes/match.js";
 import teamRoutes from "./routes/team.js";
 import userTeamRoutes from "./routes/userTeam.js";
@@ -36,7 +36,7 @@ const io = new Server(server, {
 
 // routes
 app.use("/auth", userRoutes);
-app.use("/tournaments", tournamentRoutes);
+app.use("/transactions", transactionRoutes);
 app.use("/match", matchRoutes);
 app.use("/team", teamRoutes);
 app.use("/match-team", userTeamRoutes);

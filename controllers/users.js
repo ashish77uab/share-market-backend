@@ -6,8 +6,9 @@ import Token from "../models/Token.js";
 import crypto from "crypto";
 import { sendEmail } from "../SendEmail.js";
 import mongoose from "mongoose";
-import {  uploadImageToCloudinary } from "../helpers/functions.js";
+import { uploadImageToCloudinary } from "../helpers/functions.js";
 import Wallet from "../models/Wallet.js";
+import Transaction from "../models/Transaction.js";
 
 export const signin = async (req, res) => {
 
@@ -34,14 +35,14 @@ export const signin = async (req, res) => {
         expiresIn: "10d",
       }
     );
-    const tempUser={...oldUser}
+    const tempUser = { ...oldUser }
     delete tempUser.password;
     delete tempUser.normalPassword;
 
 
     res.status(200).json({ result: tempUser, token });
   } catch (error) {
-    console.log(error,'error while login')
+    console.log(error, 'error while login')
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -88,7 +89,7 @@ export const signup = async (req, res) => {
         expiresIn: "10d",
       }
     );
-    res.status(201).json({ user:updatedUser, token });
+    res.status(201).json({ user: updatedUser, token });
   } catch (error) {
     console.log(error, 'error');
     return res.status(500).json({ message: 'Internal server error' });
@@ -100,7 +101,7 @@ export const getUser = async (req, res) => {
   try {
     const user = req.user;
     const userData = await returnUserData(user?.id);
-    const tempUser={...userData?.[0]}
+    const tempUser = { ...userData?.[0] }
     delete tempUser.password;
     delete tempUser.normalPassword;
     res.status(200).json(tempUser); // Send the first (and likely only) result back
@@ -163,7 +164,11 @@ export const getUsers = async (req, res) => {
           fullName: { $regex: searchQuery, $options: "i" },
         },
       },
-    
+      {
+        $sort: {
+          createdAt: -1, 
+        },
+      },
       {
         $skip: skip, // Skip the necessary number of documents for pagination
       },
@@ -275,7 +280,7 @@ export const getAllAdmin = async (req, res) => {
 export const resetPasswordRequestController = async (req, res) => {
   try {
     const user = await User.findOne({ email: req.body.email });
-    if (!user) res.status(404).json({ message: "Email does not exist" });
+    if (!user) return res.status(404).json({ message: "Email does not exist" });
 
     let token = await Token.findOne({ userId: user._id });
     if (token) {
@@ -315,7 +320,7 @@ export const resetPasswordController = async (req, res) => {
     let passwordResetToken = await Token.findOne({ userId });
 
     if (!passwordResetToken) {
-      res
+      return res
         .status(404)
         .json({ message: "Invalid or expired password reset token first one" });
     }
@@ -323,7 +328,7 @@ export const resetPasswordController = async (req, res) => {
     const isValid = await bcrypt.compare(token, passwordResetToken.token);
 
     if (!isValid) {
-      res
+      return res
         .status(404)
         .json({ message: "Invalid or expired password reset token" });
     }
@@ -354,3 +359,115 @@ export const resetPasswordController = async (req, res) => {
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
+export const changePasswordController = async (req, res) => {
+  try {
+    const { newPassword, oldPassword } = req.body;
+    const userId = req.user?.id;
+
+    let oldUser = await User.findById(userId);
+
+    if (!oldUser) {
+      return res
+        .status(501)
+        .json({ message: "Unauthorize" });
+    }
+    if (oldPassword !== oldUser.normalPassword) {
+      return res
+        .status(500)
+        .json({ message: "Old Password not matched" });
+    }
+    const hash = await bcrypt.hash(newPassword, Number(process.env.BCRYPT_SALT));
+
+    await User.updateOne(
+      { _id: userId },
+      { $set: { password: hash, normalPassword: newPassword } },
+      { new: true }
+    );
+    return res.status(200).json({ message: "Password changed was successful" });
+  } catch (error) {
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+export const addDepositController = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    let transaction = await Transaction.create({ ...req.body, userId: userId, actionType: 'Deposit',status:'Pending' });
+    return res.status(201).json(transaction);
+  } catch (error) {
+    console.log(error, 'while creating transaction error');
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+export const withdrawFundController = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const user = await User.find({ panNumber: req.body.panNumber })
+    if (!user[0]) {
+      return res.status(404).json({ message: "PAN Number not matched" });
+    }
+    const transactionId=crypto.randomBytes(Math.ceil(14/2))
+    .toString('hex') 
+    .toUpperCase()
+    let transaction = await Transaction.create({ ...req.body,transactionId:transactionId, userId: userId, actionType: 'Withdraw',status:'Pending' });
+    await Wallet.findOneAndUpdate(
+      { user: userId },
+      {
+        $inc: {
+          amount: -Number(req.body?.amount)      // Increase the winnings
+        }
+      },
+    );
+    return res.status(201).json(transaction);
+  } catch (error) {
+    console.log(error, 'while creating transaction error');
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+export const getUserTransactionsController = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const { limit = 10, page = 1, actionType = 'Deposit' } = req.query;
+
+    const pageNumber = parseInt(page);
+    const pageSize = parseInt(limit);
+
+    // Aggregation pipeline
+    const transactions = await Transaction.aggregate([
+      // Match transactions based on userId and actionType
+      {
+        $match: {
+          userId: mongoose.Types.ObjectId(userId),
+          actionType: actionType,
+        },
+      },
+      // Sort transactions by creation date (most recent first)
+      {
+        $sort: { createdAt: -1 },
+      },
+      // Pagination: Skip and limit
+      {
+        $skip: (pageNumber - 1) * pageSize,
+      },
+      {
+        $limit: pageSize,
+      },
+    ]);
+
+    // Get total count of matching transactions for pagination metadata
+    const totalTransactions = await Transaction.countDocuments({
+      userId: userId,
+      actionType: actionType,
+    });
+
+    return res.status(200).json({
+      transactions,
+      currentPage: pageNumber,
+      totalPages: Math.ceil(totalTransactions / pageSize),
+      totalTransactions,
+    });
+  } catch (error) {
+    console.error(error, 'while fetching transactions');
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
