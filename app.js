@@ -9,6 +9,7 @@ import teamRoutes from "./routes/team.js";
 import userTeamRoutes from "./routes/userTeam.js";
 import prizeRoutes from "./routes/prizePyramid.js";
 import playerRoutes from "./routes/player.js";
+import stockRoutes from "./routes/stock.js";
 import upload from "./middleware/upload.js";
 import dotenv from "dotenv";
 import morgan from "morgan";
@@ -36,6 +37,7 @@ const io = new Server(server, {
 
 // routes
 app.use("/auth", userRoutes);
+app.use("/stock", stockRoutes);
 app.use("/transactions", transactionRoutes);
 app.use("/match", matchRoutes);
 app.use("/team", teamRoutes);

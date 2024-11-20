@@ -425,8 +425,7 @@ export const withdrawFundController = async (req, res) => {
 };
 export const getUserTransactionsController = async (req, res) => {
   try {
-    const userId = req.user?.id;
-    const { limit = 10, page = 1, actionType = 'Deposit' } = req.query;
+    const { limit = 10, page = 1, actionType = 'Deposit',userId } = req.query;
 
     const pageNumber = parseInt(page);
     const pageSize = parseInt(limit);

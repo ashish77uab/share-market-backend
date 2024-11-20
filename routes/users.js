@@ -12,7 +12,7 @@ import {
   changePasswordController,
   addDepositController,
   getUserTransactionsController,
-  withdrawFundController
+  withdrawFundController,
 } from "../controllers/users.js";
 import { authenticateJWT } from "../middleware/auth.js";
 import upload from "../middleware/upload.js";
