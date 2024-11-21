@@ -13,6 +13,7 @@ import {
   addDepositController,
   getUserTransactionsController,
   withdrawFundController,
+  contactUsController
 } from "../controllers/users.js";
 import { authenticateJWT } from "../middleware/auth.js";
 import upload from "../middleware/upload.js";
@@ -33,6 +34,7 @@ router.get("/all-users", authenticateJWT, getUsers);
 router.get("/single-user", authenticateJWT, getUserById);
 router.get("/all-admin", authenticateJWT, getAllAdmin);
 router.get("/transactions", authenticateJWT, getUserTransactionsController);
+router.post("/contact-us", contactUsController);
 
 
 export default router;

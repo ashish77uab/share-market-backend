@@ -4,7 +4,7 @@ import fs from "fs";
 import User from "../models/User.js";
 import Token from "../models/Token.js";
 import crypto from "crypto";
-import { sendEmail } from "../SendEmail.js";
+import { sendEmail, sendEmailAdminToUser, sendEmailToAdminForUserDetail } from "../SendEmail.js";
 import mongoose from "mongoose";
 import { uploadImageToCloudinary } from "../helpers/functions.js";
 import Wallet from "../models/Wallet.js";
@@ -166,7 +166,7 @@ export const getUsers = async (req, res) => {
       },
       {
         $sort: {
-          createdAt: -1, 
+          createdAt: -1,
         },
       },
       {
@@ -307,8 +307,39 @@ export const resetPasswordRequestController = async (req, res) => {
       },
       "/views/template/requestResetPassword.ejs"
     );
-    return res.json({ link });
+    return   res.status(200).json({ link });
   } catch (error) {
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+export const contactUsController = async (req, res) => {
+  try {
+
+    const { fullName,email,mobile,message } = req.body
+
+    sendEmailAdminToUser(
+      `This is Mail from Algotrons Team`,
+      {
+        fullName: fullName,
+        email:email,
+        mobile:mobile,
+        message: message,
+      },
+      "/views/template/contactUsUser.ejs"
+    );
+    sendEmailToAdminForUserDetail(
+      `Contact: ${fullName} is trying to contact you`,
+      {
+        fullName: fullName,
+        email:email,
+        mobile:mobile,
+        message: message,
+      },
+      "/views/template/contactUsAdmin.ejs"
+    );
+    return res.status(200).json({ success:'Sent Success' });
+  } catch (error) {
+    console.log(error)
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -391,7 +422,7 @@ export const changePasswordController = async (req, res) => {
 export const addDepositController = async (req, res) => {
   try {
     const userId = req.user?.id;
-    let transaction = await Transaction.create({ ...req.body, userId: userId, actionType: 'Deposit',status:'Pending' });
+    let transaction = await Transaction.create({ ...req.body, userId: userId, actionType: 'Deposit', status: 'Pending' });
     return res.status(201).json(transaction);
   } catch (error) {
     console.log(error, 'while creating transaction error');
@@ -405,10 +436,16 @@ export const withdrawFundController = async (req, res) => {
     if (!user[0]) {
       return res.status(404).json({ message: "PAN Number not matched" });
     }
-    const transactionId=crypto.randomBytes(Math.ceil(14/2))
-    .toString('hex') 
-    .toUpperCase()
-    let transaction = await Transaction.create({ ...req.body,transactionId:transactionId, userId: userId, actionType: 'Withdraw',status:'Pending' });
+    const transactionId = crypto.randomBytes(Math.ceil(14 / 2))
+      .toString('hex')
+      .toUpperCase()
+    const wallet = await Wallet.findById(user[0]?.wallet)
+    if (Number(req.body.amount) === 0) {
+      return res.status(403).json({ message: "Please add more than 0 Rs amount" });
+    }
+    if (Number(wallet?.amount) < Number(req.body.amount))
+      return res.status(403).json({ message: "Insufficient funds" });
+    let transaction = await Transaction.create({ ...req.body, transactionId: transactionId, userId: userId, actionType: 'Withdraw', status: 'Pending' });
     await Wallet.findOneAndUpdate(
       { user: userId },
       {
@@ -425,7 +462,7 @@ export const withdrawFundController = async (req, res) => {
 };
 export const getUserTransactionsController = async (req, res) => {
   try {
-    const { limit = 10, page = 1, actionType = 'Deposit',userId } = req.query;
+    const { limit = 10, page = 1, actionType = 'Deposit', userId } = req.query;
 
     const pageNumber = parseInt(page);
     const pageSize = parseInt(limit);
