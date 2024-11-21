@@ -4,7 +4,7 @@ import crypto from 'crypto'
 export const uploadImageToCloudinary = async (file, res) => {
     try {
         const result = await cloudinary.uploader.upload(file.path,{
-            folder:'ecommerce',
+            folder:'sharemarket',
             transformation: [
                 { width: 1000, height: 1000, crop: 'limit', quality: 'auto', fetch_format: 'auto' } // Resize and set quality
             ]
@@ -21,7 +21,7 @@ export const deleteFileFromCloudinary = async (url) => {
         const parts = url.split('/');
         const fileNameWithExtension = parts[parts.length - 1]; // "qjdj4lcwycq3tp0dkv5f.jpg"
         const publicId = fileNameWithExtension.split('.')[0]; // "qjdj4lcwycq3tp0dkv5f"
-        const result = await cloudinary.uploader.destroy(`ecommerce/${publicId}`);
+        const result = await cloudinary.uploader.destroy(`sharemarket/${publicId}`);
         return result?.result==='ok';
     } catch (error) {
         console.error('Error deleting file from Cloudinary:', error);
