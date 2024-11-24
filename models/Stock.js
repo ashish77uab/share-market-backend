@@ -2,10 +2,23 @@ import mongoose from "mongoose";
 
 export const stockSchema = mongoose.Schema(
   {
+    name: { type: String, required: true },
+    quantity: { type: Number, required: true },
+    amount: { type: Number, required: true },
     startPrice: { type: Number, required: true },
-    endPrice: { type: Number, required: true },
-    name: { type: Number, required: true },
-  
+    endPrice: { type: Number, default: null },
+    quantityLeft: { type: Number, default: null },
+    diffAmount: { type: Number, default: null },
+    isSettled: { type: Boolean, default: false },
+    actionType: {
+      type: String,
+      enum: ["Buy", "Sell", 'Settled'],
+      default: "Buy",
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
   },
   {
     timestamps: true,

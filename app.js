@@ -4,11 +4,6 @@ import mongoose from "mongoose";
 import cors from "cors";
 import userRoutes from "./routes/users.js";
 import transactionRoutes from "./routes/transactions.js";
-import matchRoutes from "./routes/match.js";
-import teamRoutes from "./routes/team.js";
-import userTeamRoutes from "./routes/userTeam.js";
-import prizeRoutes from "./routes/prizePyramid.js";
-import playerRoutes from "./routes/player.js";
 import stockRoutes from "./routes/stock.js";
 import upload from "./middleware/upload.js";
 import dotenv from "dotenv";
@@ -39,11 +34,6 @@ const io = new Server(server, {
 app.use("/auth", userRoutes);
 app.use("/stock", stockRoutes);
 app.use("/transactions", transactionRoutes);
-app.use("/match", matchRoutes);
-app.use("/team", teamRoutes);
-app.use("/match-team", userTeamRoutes);
-app.use("/player", playerRoutes);
-app.use("/prize",prizeRoutes);
 app.post("/upload", upload.single("file"), (req, res) => {
   res.status(200).json(req.file.filename);
 });
