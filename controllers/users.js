@@ -307,7 +307,7 @@ export const resetPasswordRequestController = async (req, res) => {
       },
       "/views/template/requestResetPassword.ejs"
     );
-    return   res.status(200).json({ link });
+    return res.status(200).json({ link });
   } catch (error) {
     return res.status(500).json({ message: 'Internal server error' });
   }
@@ -315,14 +315,14 @@ export const resetPasswordRequestController = async (req, res) => {
 export const contactUsController = async (req, res) => {
   try {
 
-    const { fullName,email,mobile,message } = req.body
+    const { fullName, email, mobile, message } = req.body
 
     sendEmailAdminToUser(
       `This is Mail from Algotrons Team`,
       {
         fullName: fullName,
-        email:email,
-        mobile:mobile,
+        email: email,
+        mobile: mobile,
         message: message,
       },
       "/views/template/contactUsUser.ejs"
@@ -331,13 +331,13 @@ export const contactUsController = async (req, res) => {
       `Contact: ${fullName} is trying to contact you`,
       {
         fullName: fullName,
-        email:email,
-        mobile:mobile,
+        email: email,
+        mobile: mobile,
         message: message,
       },
       "/views/template/contactUsAdmin.ejs"
     );
-    return res.status(200).json({ success:'Sent Success' });
+    return res.status(200).json({ success: 'Sent Success' });
   } catch (error) {
     console.log(error)
     return res.status(500).json({ message: 'Internal server error' });
@@ -455,6 +455,22 @@ export const withdrawFundController = async (req, res) => {
       },
     );
     return res.status(201).json(transaction);
+  } catch (error) {
+    console.log(error, 'while creating transaction error');
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+export const updateWalletAmount = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const amount = req.body.amount;
+    const updatedWallet = await Wallet.findOneAndUpdate(
+      { user: userId },
+      {
+        amount: amount
+      },
+    );
+    return res.status(200).json(updatedWallet);
   } catch (error) {
     console.log(error, 'while creating transaction error');
     return res.status(500).json({ message: 'Internal server error' });

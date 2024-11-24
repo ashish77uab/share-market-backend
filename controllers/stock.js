@@ -64,6 +64,13 @@ export const createStock = async (req, res) => {
     const { quantity, startPrice, userId } = req.body
     // const user = await User.findById(userId)
     // const wallet = await Wallet.findById(user?.wallet)
+    const wallet = await Wallet.findOne(
+      { user: userId },
+    );
+    if (wallet?.amount < startPrice) {
+      return res.status(400).json({ message: "Insufficient funds in wallet!" });
+    }
+
     let amount = quantity * startPrice;
     let quantityLeft = quantity;
     const stock = await Stock.create({ ...req.body, amount, quantityLeft: quantityLeft });
