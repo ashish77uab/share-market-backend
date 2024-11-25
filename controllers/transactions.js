@@ -53,12 +53,12 @@ export const getAllTransactions = async (req, res) => {
           updatedAt: 1, // Include timestamps
           "user.email": 1, // Include only user email
           "user.fullName": 1, // Include only user fullName
-          "user._id": 1, 
+          "user._id": 1,
         },
       },
       {
         $sort: {
-          createdAt: -1, 
+          createdAt: -1,
         },
       },
       {
@@ -83,8 +83,8 @@ export const getAllTransactions = async (req, res) => {
 
 export const updateTransaction = async (req, res) => {
   try {
-    const {transactionId,status,userId,amount}=req.body
- 
+    const { transactionId, status, userId, amount } = req.body
+
     const transaction = await Transaction.findByIdAndUpdate(
       transactionId,
       {
@@ -94,19 +94,19 @@ export const updateTransaction = async (req, res) => {
     );
     if (!transaction)
       return res.status(400).json({ message: "the transaction status cannot be updated!" });
-    let amountToDeduct=amount
-    if((transaction.actionType==='Deposit' && status==='Accepted') || (transaction.actionType==='Withdraw' && status==='Rejected')){
+    let amountToDeduct = amount
+    if ((transaction.actionType === 'Deposit' && status === 'Accepted') || (transaction.actionType === 'Withdraw' && status === 'Rejected')) {
       await Wallet.findOneAndUpdate(
         { user: userId },
         {
           $inc: {
-            amount: Number(amount)    
+            amount: Number(amount)
           }
         },
       );
     }
-   
-   
+
+
     res.status(201).json(transaction);
   } catch (error) {
     console.log(error)

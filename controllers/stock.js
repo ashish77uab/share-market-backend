@@ -187,7 +187,7 @@ export const makeSettle = async (req, res) => {
       return res.status(400).json({ message: "the stock  cannot be created!" });
     res.status(201).json(stock);
   } catch (error) {
-    // console.log(error, 'error making settle stock')
+    console.log(error, 'error making settle stock')
     res
       .status(500)
       .json({ message: "Internal server error" });

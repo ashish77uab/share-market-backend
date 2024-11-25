@@ -184,6 +184,7 @@ export const getUsers = async (req, res) => {
       totalUsers
     });
   } catch (error) {
+    console.log(error)
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -272,6 +273,7 @@ export const getAllAdmin = async (req, res) => {
     ]);
     res.status(200).json(allAdmin);
   } catch (error) {
+    console.log(error)
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -309,6 +311,7 @@ export const resetPasswordRequestController = async (req, res) => {
     );
     return res.status(200).json({ link });
   } catch (error) {
+    console.log(error)
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -387,6 +390,7 @@ export const resetPasswordController = async (req, res) => {
 
     return res.json({ message: "Password reset was successful" });
   } catch (error) {
+    console.log(error)
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
@@ -416,6 +420,7 @@ export const changePasswordController = async (req, res) => {
     );
     return res.status(200).json({ message: "Password changed was successful" });
   } catch (error) {
+    console.log(error)
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
