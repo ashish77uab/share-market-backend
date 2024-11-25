@@ -212,14 +212,10 @@ export const deleteStock = async (req, res) => {
 export const updateStock = async (req, res) => {
   try {
     const stockId = req.params.id
-    const { quantity, startPrice, endPrice } = req.body
-    let amount = quantity * (endPrice - startPrice);
-
     const stock = await Stock.findByIdAndUpdate(
       stockId,
       {
         ...req.body,
-        amount
       },
       { new: true }
     );
