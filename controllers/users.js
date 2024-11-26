@@ -427,7 +427,9 @@ export const changePasswordController = async (req, res) => {
 export const addDepositController = async (req, res) => {
   try {
     const userId = req.user?.id;
-    let transaction = await Transaction.create({ ...req.body, userId: userId, actionType: 'Deposit', status: 'Pending' });
+    const { screenShot } = req.files
+    const screenShotUrl = await uploadImageToCloudinary(screenShot?.[0], res)
+    let transaction = await Transaction.create({ ...req.body, amount: Number(req.body.amount), screenShot: screenShotUrl, userId: userId, actionType: 'Deposit', status: 'Pending' });
     return res.status(201).json(transaction);
   } catch (error) {
     console.log(error, 'while creating transaction error');

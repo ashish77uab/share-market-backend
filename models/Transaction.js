@@ -8,6 +8,11 @@ export const transactionSchema = mongoose.Schema(
       unique: true,
       required: true
     },
+    screenShot: {
+      type: String,
+      unique: true,
+      required: true
+    },
     actionType: {
       type: String,
       enum: ["Deposit", "Withdraw"],

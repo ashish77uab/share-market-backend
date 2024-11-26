@@ -28,7 +28,9 @@ router.post("/login", signin);
 router.post("/requestResetPassword", resetPasswordRequestController);
 router.post("/resetPassword", resetPasswordController);
 router.post("/update-password", authenticateJWT, changePasswordController);
-router.post("/add-deposit", authenticateJWT, addDepositController);
+router.post("/add-deposit", authenticateJWT, upload.fields([
+  { name: 'screenShot', maxCount: 1 },
+]), addDepositController);
 router.post("/withdraw-fund", authenticateJWT, withdrawFundController);
 router.get("/profile", authenticateJWT, getUser);
 router.get("/all-users", authenticateJWT, getUsers);

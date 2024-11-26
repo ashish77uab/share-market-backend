@@ -44,15 +44,16 @@ export const getAllTransactions = async (req, res) => {
       },
       {
         $project: {
-          _id: 1, // Include transactionId
-          transactionId: 1, // Include transactionId
-          amount: 1, // Include amount
-          actionType: 1, // Include actionType
-          status: 1, // Include status
-          createdAt: 1, // Include timestamps
-          updatedAt: 1, // Include timestamps
-          "user.email": 1, // Include only user email
-          "user.fullName": 1, // Include only user fullName
+          _id: 1,
+          transactionId: 1,
+          amount: 1,
+          actionType: 1,
+          screenShot: 1,
+          status: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          "user.email": 1,
+          "user.fullName": 1,
           "user._id": 1,
         },
       },
@@ -84,7 +85,6 @@ export const getAllTransactions = async (req, res) => {
 export const updateTransaction = async (req, res) => {
   try {
     const { transactionId, status, userId, amount } = req.body
-
     const transaction = await Transaction.findByIdAndUpdate(
       transactionId,
       {
