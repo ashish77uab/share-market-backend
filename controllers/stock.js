@@ -100,16 +100,12 @@ export const createStock = async (req, res) => {
 };
 export const sellStock = async (req, res) => {
   try {
-    const { quantity, endPrice, userId, stockId } = req.body
+    const { quantity, endPrice = 0, userId, stockId } = req.body
     const oldStock = await Stock.findById(stockId);
     let priceDiff = endPrice - oldStock?.startPrice;
     let diffAmount = quantity * priceDiff;
     let quantityLeft = oldStock?.quantityLeft - quantity;
     const newAmount = oldStock?.amount + diffAmount
-    if (diffAmount < 0) {
-      diffAmount = diffAmount
-
-    }
     const stock = await Stock.create({
       name: oldStock?.name,
       quantity: oldStock?.quantity,
@@ -121,13 +117,6 @@ export const sellStock = async (req, res) => {
       actionType: req?.body?.actionType,
       userId: oldStock?.userId,
       isSettled: quantityLeft === 0 ? true : false
-
-    });
-    await StockTransaction.create({
-      amount: diffAmount,
-      actionType: 'Sell',
-      userId,
-      stockId: stock._id,
     });
     if (quantityLeft === 0) {
       await Wallet.findOneAndUpdate(
@@ -217,15 +206,12 @@ export const updateStock = async (req, res) => {
     let priceDiff = endPrice - oldStock?.startPrice;
     let diffAmount = quantity * priceDiff;
     const newAmount = oldStock?.amount + diffAmount
-    if (diffAmount < 0) {
-      diffAmount = diffAmount
-
-    }
     const stock = await Stock.findByIdAndUpdate(
       stockId,
       {
         ...req.body,
         diffAmount: diffAmount,
+        // amount: newAmount
       },
       { new: true }
     );
