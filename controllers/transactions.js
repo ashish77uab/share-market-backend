@@ -13,7 +13,7 @@ export const getAllTransactions = async (req, res) => {
 
     // Build dynamic match condition
     const matchCondition = {
-      transactionId: { $regex: searchQuery, $options: "i" }, // Search by transactionId
+      // transactionId: { $regex: searchQuery, $options: "i" }, 
     };
 
     if (status) {
@@ -45,7 +45,6 @@ export const getAllTransactions = async (req, res) => {
       {
         $project: {
           _id: 1,
-          transactionId: 1,
           amount: 1,
           actionType: 1,
           screenShot: 1,

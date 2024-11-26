@@ -3,11 +3,6 @@ import mongoose from "mongoose";
 export const transactionSchema = mongoose.Schema(
   {
     amount: { type: Number, required: true },
-    transactionId: {
-      type: String,
-      unique: true,
-      required: true
-    },
     screenShot: {
       type: String,
       unique: true,

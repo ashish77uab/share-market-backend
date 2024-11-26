@@ -37,15 +37,19 @@ app.use("/transactions", transactionRoutes);
 app.post("/upload", upload.single("file"), (req, res) => {
   res.status(200).json(req.file.filename);
 });
+let db;
 mongoose
   .connect(process.env.CONNECTION_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() =>
+  .then(() => {
+    db = mongoose.connection.db;
     server.listen(PORT, () =>
       console.log(`Server Running on Port: http://localhost:${PORT}`)
     )
+  }
+
   )
   .catch((error) => console.log(`${error} did not connect`));
 
