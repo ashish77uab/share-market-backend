@@ -201,18 +201,16 @@ export const deleteStock = async (req, res) => {
 export const updateStock = async (req, res) => {
   try {
     const stockId = req.params.id
-    const isChecked = Boolean(req.query.isChecked)
-    const { quantity, endPrice, userId } = req.body
+    const isChecked = req.query.isChecked === 'true'
+    const { quantity, endPrice } = req.body
     const oldStock = await Stock.findById(stockId);
     let priceDiff = endPrice - oldStock?.startPrice;
     let diffAmount = quantity * priceDiff;
-    // const newAmount = oldStock?.amount + diffAmount
     const stock = await Stock.findByIdAndUpdate(
       stockId,
       {
         ...req.body,
         diffAmount: isChecked ? req.body.diffAmount : diffAmount,
-        // amount: newAmount
       },
       { new: true }
     );
