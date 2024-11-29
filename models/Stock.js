@@ -10,6 +10,7 @@ export const stockSchema = mongoose.Schema(
     quantityLeft: { type: Number, default: null },
     diffAmount: { type: Number, default: null },
     isSettled: { type: Boolean, default: false },
+    date: { type: Date },
     actionType: {
       type: String,
       enum: ["Buy", "Sell", 'Settled'],

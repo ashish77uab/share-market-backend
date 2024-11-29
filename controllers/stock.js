@@ -116,6 +116,7 @@ export const sellStock = async (req, res) => {
       diffAmount: diffAmount,
       actionType: req?.body?.actionType,
       userId: oldStock?.userId,
+      date: req.body.date,
       isSettled: quantityLeft === 0 ? true : false
     });
     if (quantityLeft === 0) {
