@@ -43,14 +43,40 @@ mongoose
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
-  .then(() => {
-    db = mongoose.connection.db;
-    server.listen(PORT, () =>
-      console.log(`Server Running on Port: http://localhost:${PORT}`)
-    )
-  }
+  .then(async () => {
+    db = mongoose.connection.db; // Get the database instance
 
-  )
-  .catch((error) => console.log(`${error} did not connect`));
+    const transactionsCollection = db.collection("transactions");
 
+    // Drop the existing index if it exists
+    try {
+      await transactionsCollection.dropIndex("screenShot_1");
+      console.log("Index 'screenShot_1' dropped successfully");
+    } catch (err) {
+      if (err.code === 27) {
+        // Error code 27 means the index doesn't exist
+        console.log("Index 'screenShot_1' does not exist, skipping drop");
+      } else {
+        throw err;
+      }
+    }
+
+    Create the new partial index
+    await transactionsCollection.createIndex(
+      { screenShot: 1 },
+      { unique: true, partialFilterExpression: { screenShot: { $exists: true } } }
+    );
+
+    console.log("Partial index created successfully");
+
+
+  })
+  .catch((error) => {
+    console.error("Database connection error:", error);
+  });
+
+// Start the server
+server.listen(PORT, () =>
+  console.log(`Server Running on Port: http://localhost:${PORT}`)
+);
 
