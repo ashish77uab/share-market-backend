@@ -61,7 +61,7 @@ mongoose
       }
     }
 
-    Create the new partial index
+    // Create the new partial index
     await transactionsCollection.createIndex(
       { screenShot: 1 },
       { unique: true, partialFilterExpression: { screenShot: { $exists: true } } }
