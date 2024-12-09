@@ -444,16 +444,14 @@ export const withdrawFundController = async (req, res) => {
     if (!user[0]) {
       return res.status(404).json({ message: "PAN Number not matched" });
     }
-    const transactionId = crypto.randomBytes(Math.ceil(14 / 2))
-      .toString('hex')
-      .toUpperCase()
+
     const wallet = await Wallet.findById(user[0]?.wallet)
     if (Number(req.body.amount) === 0) {
       return res.status(403).json({ message: "Please add more than 0 Rs amount" });
     }
     if (Number(wallet?.amount) < Number(req.body.amount))
       return res.status(403).json({ message: "Insufficient funds" });
-    let transaction = await Transaction.create({ ...req.body, transactionId: transactionId, userId: userId, actionType: 'Withdraw', status: 'Pending' });
+    let transaction = await Transaction.create({ ...req.body, userId: userId, actionType: 'Withdraw', status: 'Pending' });
     await Wallet.findOneAndUpdate(
       { user: userId },
       {

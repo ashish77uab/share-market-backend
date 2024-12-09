@@ -6,7 +6,9 @@ export const transactionSchema = mongoose.Schema(
     screenShot: {
       type: String,
       unique: true,
-      required: true
+      required: function () {
+        return this.actionType === "Deposit";
+      },
     },
     actionType: {
       type: String,
