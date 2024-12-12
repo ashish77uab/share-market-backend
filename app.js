@@ -5,6 +5,7 @@ import cors from "cors";
 import userRoutes from "./routes/users.js";
 import transactionRoutes from "./routes/transactions.js";
 import stockRoutes from "./routes/stock.js";
+import apiRoutes from "./routes/apiAuth.js";
 import upload from "./middleware/upload.js";
 import dotenv from "dotenv";
 import morgan from "morgan";
@@ -31,6 +32,7 @@ const io = new Server(server, {
 });
 
 // routes
+app.use("/api", apiRoutes);
 app.use("/auth", userRoutes);
 app.use("/stock", stockRoutes);
 app.use("/transactions", transactionRoutes);
