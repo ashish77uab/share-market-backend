@@ -5,6 +5,7 @@ import cors from "cors";
 import userRoutes from "./routes/users.js";
 import transactionRoutes from "./routes/transactions.js";
 import stockRoutes from "./routes/stock.js";
+import holdingRoutes from "./routes/holding.js";
 import upload from "./middleware/upload.js";
 import dotenv from "dotenv";
 import morgan from "morgan";
@@ -33,6 +34,7 @@ const io = new Server(server, {
 // routes
 app.use("/auth", userRoutes);
 app.use("/stock", stockRoutes);
+app.use("/holding", holdingRoutes);
 app.use("/transactions", transactionRoutes);
 app.post("/upload", upload.single("file"), (req, res) => {
   res.status(200).json(req.file.filename);
@@ -46,28 +48,28 @@ mongoose
   .then(async () => {
     db = mongoose.connection.db; // Get the database instance
 
-    const transactionsCollection = db.collection("transactions");
+    // const transactionsCollection = db.collection("transactions");
 
-    // Drop the existing index if it exists
-    try {
-      await transactionsCollection.dropIndex("screenShot_1");
-      console.log("Index 'screenShot_1' dropped successfully");
-    } catch (err) {
-      if (err.code === 27) {
-        // Error code 27 means the index doesn't exist
-        console.log("Index 'screenShot_1' does not exist, skipping drop");
-      } else {
-        throw err;
-      }
-    }
+    // // Drop the existing index if it exists
+    // try {
+    //   await transactionsCollection.dropIndex("screenShot_1");
+    //   console.log("Index 'screenShot_1' dropped successfully");
+    // } catch (err) {
+    //   if (err.code === 27) {
+    //     // Error code 27 means the index doesn't exist
+    //     console.log("Index 'screenShot_1' does not exist, skipping drop");
+    //   } else {
+    //     throw err;
+    //   }
+    // }
 
-    // Create the new partial index
-    await transactionsCollection.createIndex(
-      { screenShot: 1 },
-      { unique: true, partialFilterExpression: { screenShot: { $exists: true } } }
-    );
+    // // Create the new partial index
+    // await transactionsCollection.createIndex(
+    //   { screenShot: 1 },
+    //   { unique: true, partialFilterExpression: { screenShot: { $exists: true } } }
+    // );
 
-    console.log("Partial index created successfully");
+    // console.log("Partial index created successfully");
 
 
   })

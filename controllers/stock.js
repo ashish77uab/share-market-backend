@@ -1,8 +1,6 @@
 import mongoose from "mongoose";
 import Stock from "../models/Stock.js";
-import User from "../models/User.js";
 import Wallet from "../models/Wallet.js";
-import StockTransaction from "../models/StockTransaction.js";
 
 export const getUserStocks = async (req, res) => {
   try {
@@ -62,24 +60,17 @@ export const getUserStocks = async (req, res) => {
 export const createStock = async (req, res) => {
   try {
     const { quantity, startPrice, userId } = req.body
-    // const user = await User.findById(userId)
-    // const wallet = await Wallet.findById(user?.wallet)
+    let amount = quantity * startPrice;
     const wallet = await Wallet.findOne(
       { user: userId },
     );
-    if (wallet?.amount < startPrice) {
+    if (wallet?.amount < amount) {
       return res.status(400).json({ message: "Insufficient funds in wallet!" });
     }
 
-    let amount = quantity * startPrice;
+
     let quantityLeft = quantity;
     const stock = await Stock.create({ ...req.body, amount, quantityLeft: quantityLeft });
-    await StockTransaction.create({
-      amount: amount,
-      actionType: 'Buy',
-      userId,
-      stockId: stock._id,
-    });
     await Wallet.findOneAndUpdate(
       { user: userId },
       {
@@ -106,19 +97,23 @@ export const sellStock = async (req, res) => {
     let diffAmount = quantity * priceDiff;
     let quantityLeft = oldStock?.quantityLeft - quantity;
     const newAmount = oldStock?.amount + diffAmount
-    const stock = await Stock.create({
-      name: oldStock?.name,
-      quantity: oldStock?.quantity,
-      quantityLeft: quantityLeft,
-      amount: newAmount,
-      startPrice: oldStock?.startPrice,
-      endPrice: req?.body?.endPrice,
-      diffAmount: diffAmount,
-      actionType: req?.body?.actionType,
-      userId: oldStock?.userId,
-      date: req.body.date,
-      isSettled: quantityLeft === 0 ? true : false
-    });
+    const stock = await Stock.findByIdAndUpdate(
+      stockId,
+      {
+        name: oldStock?.name,
+        quantity: oldStock?.quantity,
+        quantityLeft: quantityLeft,
+        amount: newAmount,
+        startPrice: oldStock?.startPrice,
+        endPrice: req?.body?.endPrice,
+        diffAmount: diffAmount,
+        actionType: req?.body?.actionType,
+        userId: oldStock?.userId,
+        date: req.body.date,
+        isSettled: quantityLeft === 0 ? true : false
+      },
+      { new: true }
+    );
     if (quantityLeft === 0) {
       await Wallet.findOneAndUpdate(
         { user: userId },
@@ -130,10 +125,10 @@ export const sellStock = async (req, res) => {
       );
     }
     if (!stock)
-      return res.status(400).json({ message: "the stock  cannot be created!" });
+      return res.status(400).json({ message: "the stock  cannot be selled!" });
     res.status(201).json(stock);
   } catch (error) {
-    console.log(error, 'error creating stock')
+    console.log(error, 'error selling stock')
     res
       .status(500)
       .json({ message: "Internal server error" });
@@ -159,12 +154,7 @@ export const makeSettle = async (req, res) => {
       isSettled: true
 
     });
-    await StockTransaction.create({
-      amount: newAmount,
-      actionType: 'Settled',
-      userId,
-      stockId: stockId,
-    });
+
     await Wallet.findOneAndUpdate(
       { user: userId },
       {
@@ -174,7 +164,7 @@ export const makeSettle = async (req, res) => {
       },
     );
     if (!stock)
-      return res.status(400).json({ message: "the stock  cannot be created!" });
+      return res.status(400).json({ message: "the stock  cannot be settle!" });
     res.status(201).json(stock);
   } catch (error) {
     console.log(error, 'error making settle stock')
