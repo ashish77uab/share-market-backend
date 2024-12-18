@@ -109,16 +109,7 @@ export const sellHolding = async (req, res) => {
       date: req.body.date,
       isSettled: quantityLeft === 0 ? true : false
     });
-    if (quantityLeft === 0) {
-      await Wallet.findOneAndUpdate(
-        { user: userId },
-        {
-          $inc: {
-            amount: newAmount
-          }
-        },
-      );
-    }
+
     if (!holding)
       return res.status(400).json({ message: "the holding  cannot be sell!" });
     res.status(201).json(holding);

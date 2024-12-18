@@ -113,16 +113,7 @@ export const sellStock = async (req, res) => {
       },
       { new: true }
     );
-    if (quantityLeft === 0) {
-      await Wallet.findOneAndUpdate(
-        { user: userId },
-        {
-          $inc: {
-            amount: newAmount
-          }
-        },
-      );
-    }
+
     if (!stock)
       return res.status(400).json({ message: "the stock  cannot be selled!" });
     res.status(201).json(stock);
