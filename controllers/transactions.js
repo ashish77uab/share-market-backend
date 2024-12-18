@@ -114,4 +114,35 @@ export const updateTransaction = async (req, res) => {
       .json({ message: "Internal server error" });
   }
 };
+export const updateTransactionAmount = async (req, res) => {
+  try {
+    const { oldAmount, newAmount } = req.body
+    const transactionId = req.params.id
+    const userId = req.params.userId
+    const newAmountToAdd = Number(oldAmount) - Number(newAmount)
+    const transaction = await Transaction.findByIdAndUpdate(
+      transactionId,
+      {
+        amount: newAmount
+      },
+      { new: true }
+    );
+    await Wallet.findOneAndUpdate(
+      { user: userId },
+      {
+        $inc: {
+          amount: newAmountToAdd
+        }
+      },
+    );
+    if (!transaction)
+      return res.status(400).json({ message: "the transaction status cannot be updated!" });
+    res.status(201).json(transaction);
+  } catch (error) {
+    console.log(error)
+    res
+      .status(500)
+      .json({ message: "Internal server error" });
+  }
+};
 
