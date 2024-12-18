@@ -165,6 +165,20 @@ export const getUsers = async (req, res) => {
         },
       },
       {
+        $lookup: {
+          from: "wallets", // Name of the collection you're joining
+          localField: "wallet",
+          foreignField: "_id",
+          as: "wallet",
+        },
+      },
+      {
+        $unwind: {
+          path: "$wallet", // Unwind the subCategory field
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
         $sort: {
           createdAt: -1,
         },

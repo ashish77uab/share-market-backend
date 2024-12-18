@@ -130,7 +130,6 @@ export const makeSettle = async (req, res) => {
     const { quantityLeft, amount, diffAmount, userId } = req.body
     const oldStock = await Stock.findById(stockId);
     let newAmount = amount - diffAmount
-    console.log(newAmount, req.body, 'newAmount')
     const stock = await Stock.create({
       name: oldStock?.name,
       quantity: oldStock?.quantity,
