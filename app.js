@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import userRoutes from "./routes/users.js";
 import transactionRoutes from "./routes/transactions.js";
+import dashboardRoutes from "./routes/dashboard.js";
 import stockRoutes from "./routes/stock.js";
 import holdingRoutes from "./routes/holding.js";
 import upload from "./middleware/upload.js";
@@ -36,6 +37,7 @@ app.use("/auth", userRoutes);
 app.use("/stock", stockRoutes);
 app.use("/holding", holdingRoutes);
 app.use("/transactions", transactionRoutes);
+app.use("/dashboard", dashboardRoutes);
 app.post("/upload", upload.single("file"), (req, res) => {
   res.status(200).json(req.file.filename);
 });
